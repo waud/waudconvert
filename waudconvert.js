@@ -4,7 +4,7 @@ var async = require('async')
 var _ = require('underscore')._
 
 var defaults = {
-    output: "sprite",
+    output: "waudconvert",
     path: "",
     export: "m4a",
     format: null,
@@ -56,7 +56,8 @@ module.exports = function (files) {
     var wavArgs = ["-ar", opts.samplerate, "-ac", opts.channels, "-f", "s16le"];
     var tempFile;
 
-    if (/[\/\\]/.test(inputFolder.substring(inputFolder.length - 1, inputFolder.length))) inputFolder = inputFolder.substring(0, inputFolder.length - 1);
+
+    //if (/[\/\\]/.test(inputFolder.substring(inputFolder.length - 1, inputFolder.length))) inputFolder = inputFolder.substring(0, inputFolder.length - 1);
 
     spawn("ffmpeg", ["-version"]).on("exit", function (code) {
         if (code) {
@@ -192,39 +193,36 @@ module.exports = function (files) {
         }
 
         var i = 0;
-        if (!fs.existsSync(opts.output)) {
-            require("mkdirp").sync(opts.output);
-            async.forEachSeries(files, function (file, cb) {
-                i++;
-                makeRawAudioFile(file, function (err, tmp) {
-                    if (err) {
-                        return cb(err);
-                    }
-
-                    function tempProcessed() {
-                        fs.unlinkSync(tmp);
-                        cb();
-                    }
-
-                    var name = path.basename(file).replace(/\.[a-zA-Z0-9]+$/, "");
-                    tempFile = mktemp("temp");
-                    opts.logger.debug("Created temporary file", {file: tempFile});
-                    appendFile(name, tmp, tempFile, function (err) {
-                        tempProcessed();
-                    })
-
-                    async.forEachSeries(Object.keys(formats), function (ext, cb) {
-                        opts.logger.debug("Start export", {format: ext});
-                        exportFile(tempFile, opts.output + "/" + name, ext, formats[ext], true, cb);
-                    }, function (err) {});
-                })
-            }, function (err) {
+        require("mkdirp").sync(opts.output);
+        async.forEachSeries(files, function (file, cb) {
+            i++;
+            makeRawAudioFile(file, function (err, tmp) {
                 if (err) {
-                    console.log(err);
-                    return callback(new Error("Error adding file"));
+                    return cb(err);
                 }
-            });
-        }
 
+                function tempProcessed() {
+                    fs.unlinkSync(tmp);
+                    cb();
+                }
+
+                var name = path.basename(file).replace(/\.[a-zA-Z0-9]+$/, "");
+                tempFile = mktemp("temp");
+                opts.logger.debug("Created temporary file", {file: tempFile});
+                appendFile(name, tmp, tempFile, function (err) {
+                    tempProcessed();
+                });
+
+                async.forEachSeries(Object.keys(formats), function (ext, cb) {
+                    opts.logger.debug("Start export", {format: ext});
+                    exportFile(tempFile, opts.output + "/" + name, ext, formats[ext], true, cb);
+                }, function (err) {});
+            })
+        }, function (err) {
+            if (err) {
+                console.log(err);
+                return callback(new Error("Error adding file"));
+            }
+        });
     }
 }

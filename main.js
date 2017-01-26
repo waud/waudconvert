@@ -9,13 +9,13 @@ var waudconvert = require('./waudconvert')
 var optimist = require('optimist')
     .options('output', {
         alias: 'o'
-        , 'default': ''
+        , 'default': 'waudconvert'
         , describe: 'Output folder.'
     })
     .options('export', {
         alias: 'e'
         , 'default': 'm4a'
-        , describe: 'Limit exported file types. Comma separated extension list.'
+        , describe: 'Export format'
     })
     .options('log', {
         alias: 'l'
